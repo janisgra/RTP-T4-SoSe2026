@@ -1,0 +1,128 @@
+\documentclass[12pt, oneside, a4paper]{scrreprt}
+
+\input{style.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+    \begin{titlepage}
+
+        \begin{tabular}{l r} 
+            \includegraphics[width=0.5\textwidth]{figure/oth-regensburg-logo.jpg}
+            &
+        \end{tabular}
+        \vspace{1cm}
+
+        \begin{minipage} [c] [8.5cm] [b] {\textwidth}
+            \Huge{
+                \begin{center}
+                    \textbf{Praktikum Regelungstechnik (RTP)}\\[0.8cm]
+                    \textbf{Versuch T4:\\RetBot system identification, part II} \\[1.5cm]
+                    \par
+                    %{\large Versuch 3}\\[1cm]
+                    {\large \today} \\[1cm]
+                \end{center}
+                }
+        \end{minipage}
+
+        \vspace{0.1cm}
+
+        \begin{minipage} [c] [3.5cm] [b] {\textwidth}
+            \begin{center}
+                \vspace{0.3cm}
+                Gruppe 38\\
+                Marius Off\\
+                Janis Graf\\
+                \vspace{0.5cm}
+                %\texttt{Dokument-Version: 02}\\
+            \end{center}
+        \end{minipage}
+
+    \end{titlepage}
+
+    \tableofcontents
+
+
+    \chapter{Preparations}\label{chap:preperations}
+
+    
+
+
+
+
+    \chapter{Experiment T4: RetBot system identification, part 2}\label{ch:ExperimentT4}
+
+
+            \cleardoublepage
+
+            \subsection{Conclusion}\label{sec:Conclusion}
+
+
+
+
+
+    \appendix
+        % \makeatletter
+        
+    \chapter{Appendix Frontmatter}
+
+        \section{Declarations}\label{app:statutory}
+
+            \begin{enumerate}
+                \item Wir erkläre hiermit, dass wir dieses Dokument selbstständig verfasst, noch nicht anderweitig für Prüfungszwecke vorgelegt, keine anderen als die angegebenen Quellen und Hilfsmittel benutzt sowie wörtliche und sinngemäße Zitate als solche gekennzeichnet haben.
+            \end{enumerate}
+
+            \vskip22mm
+            Regensburg, den 2026-05-01, \\
+            "\hskip6cm Marius Off\hskip2cm Matrikelnummer:~3416002,\\
+            "\hskip6cm Janis Graf\hskip2cm Matrikelnummer:~3377251
+            \vskip1mm
+            \hrule
+            \vskip1mm
+            {\footnotesize Ort, Datum und Unterschrift}
+
+            \vspace{12mm}
+
+            \cleardoublepage
+
+        \listoffigures
+
+        %\listoftables
+
+            \cleardoublepage
+
+    \chapter{Appendix Code and Resources}
+
+
+
+            \section{Code used for the analysis of the Preperations}
+            
+            %\lstinputlisting[caption={Code used for the analysis of the Preperations}, label={lst:preperations}]{../02_Preperations/RTP-T2-analysis.ipynb}
+
+                \begin{tcolorbox}[
+                    colback=red!10,
+                    colframe=red!70!black,
+                    title=\textbf{Editorial note — Source code omitted},
+                    fonttitle=\bfseries,
+                    sharp corners=south,
+                ]
+                    The full source code for the analysis (a Jupyter notebook of this time approximately 1{,}500 lines) is \emph{not} included in this appendix. Including it as a verbatim listing caused major build instability again and was therefore deliberately omitted.
+
+                    The complete source can be obtained by either of the following means:
+                    \begin{itemize}
+                        \item By email request to \texttt{janis.graf@st.oth-regensburg.de}
+                        \item Via requesting access to the GitHub repository: \url{https://github.com/janisgra/RTP-T3-SoSe2026}
+                    \end{itemize}
+                \end{tcolorbox}
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %\chapter{Bibliography}
+        %%%Literaturverzeichnis
+        \printbibliography
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
