@@ -143,7 +143,7 @@
 
         \section{(cV) Block diagram of a distance control system (according to DIN IEC 60050-351).}
 
-            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351. The system consists of a reference variable $w$ (target distance), a control difference $e$, a controller output $m$, a manipulated variable $y$, a disturbance variable $z_y$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element ($K_\mathrm{P}$) processes the control difference to generate the controller output, which the final controlling element converts into the manipulated variable acting on the controlled system. The disturbance $z_y$ acts additively on the manipulated variable, and the measuring element derives the actual distance from the distance travelled, $x = x_0 - x_\mathrm{traveled}$, providing the feedback variable $r$.
+            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351~\cite{DIN_IEC_60050-351_2014}. The system consists of a reference variable $w$ (target distance), a control difference $e$, a controller output $m$, a manipulated variable $y$, a disturbance variable $z_y$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element ($K_\mathrm{P}$) processes the control difference to generate the controller output, which the final controlling element converts into the manipulated variable acting on the controlled system. The disturbance $z_y$ acts additively on the manipulated variable, and the measuring element derives the actual distance from the distance travelled, $x = x_0 - x_\mathrm{traveled}$, providing the feedback variable $r$.
 
             \begin{figure}[H]
                 \centering
@@ -237,15 +237,112 @@
                 \label{fig:distance_control_block_diagram}
             \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     \chapter{Experiment T4: RetBot system identification, part 2}\label{ch:ExperimentT4}
-        \section{(d) System description}
+        \section{(d) System description}\label{sec:d-system-description}
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(d) Use the recorded data from the previous experiment and write a Matlab program that calculates the data required for the system description for both the left and right drives. Draw graphs containing the four different conditions and the tangents, ... you applied for determining the system behavior. Consider a reasonable time frame, rather than adopting a ``take what's available'' approach.}} 
+            \end{displaycquote}\label{task(d)}
 
 
-        \section{(e)}
+            \todo[inline]{create program that calculates system parameters}
+            \todo[inline]{create graphs with the four different conditions and the tangents}
+
+            \missingfigure{figure of four graphs --- Left Wheel}\label{fig:QEI_left}
+            \missingfigure{figure of four graphs --- Right Wheel}\label{fig:QEI_right}
+
+            \todo[inline]{write short documentation paragraph about the program and the graphs}
+
+            The distance traveled by the wheels is required to analyze the measurement data. To this end, the recorded QEI signals are converted into distances $x_i$ using the following equation:
+            \begin{equation}
+                x_i = \frac{steps}{360^\circ} \cdot d_R \cdot \pi,
+                \label{eq:weg_aus_winkel}
+            \end{equation}
+            where $d_R$ denotes the wheel diameter. For the EV3 robot in question, $d_R = \SI{5.6}{\centi\metre}$. The calculation is performed separately for the left wheel and the right wheel, for different duty cycles in each case.
 
 
-        \section{(f)}
+            
+            \todo[inline]{text}
+
+            \subsection{Resulting Parameters}
+
+            \todo[inline]{add resulting parameters and short paragrahp}
+
+            \cleardoubleemptypage
+
+        \section{(e) Differential equations and transfer functions for both drives.}\label{sec:e-differential-equations}
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(e) Specify the descriptive differential equations and transfer functions for both the left and right drives (note: average value across the different duty cycles). Compare the step response of the identified system with the measured data to identify any inconsistencies.}}
+            \end{displaycquote}\label{task(e)}
+
+            The following paragraphs describe the differential equations and transfer functions for both the left and right drives using constants from the previous section.
+
+            The differential equation for an IT$_1$ system is given by:
+            \begin{equation}
+                T_1 \dot{x}(t) + x(t) = K_I \int x_e(t) \, dt
+            \end{equation}
+
+            The transfer function for an IT$_1$ system is given by:
+            \begin{equation}
+                G(s) = \frac{K_I}{s(T_1 s + 1)} 
+            \end{equation}
+
+            \begin{equation}
+                h(t) = K_I \left( t - T_1 (1 - e^{-\frac{t}{T_1}}) \right)
+            \end{equation}
+
+            \subsection{Left Motor}\label{subsec:left-motor}
+
+            \todo[inline]{add left motor description with parameters}
+
+            For the left motor, the averaged parameters are given by Figure \ref{fig:QEI_left}:
+
+            \todo[inline, color=green]{EQUATION: add averaged parameters for left motor}
+
+            This yields the differential equation for the velocity $v_L(t)$:
+
+            \todo[inline, color=green]{EQUATION: differential equation with parameters}
+
+            The corresponding transfer function $G_L(s)$ is:
+
+            \todo[inline, color=green]{EQUATION: transfer function with parameters}
+
+
+            \subsection{Right Motor}\label{subsec:right-motor}
+
+            \todo[inline]{add right motor description with parameters}
+
+            For the right motor, the averaged parameters are given by Figure \ref{fig:QEI_right}:
+
+            \todo[inline, color=green]{EQUATION: add averaged parameters for right motor}
+
+            This yields the differential equation for the velocity $v_R(t)$:
+
+            \todo[inline, color=green]{EQUATION: differential equation with parameters}
+
+            The corresponding transfer function $G_R(s)$ is:
+
+            \todo[inline, color=green]{EQUATION: transfer function with parameters}
+
+
+
+
+            \cleardoubleemptypage
+
+        \section{(f) Simulink simulation of the control loop}\label{sec:f-simulink-simulation}
+
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(f) Create a Simulink simulation of the control loop designed in the preparation phase for the distance control using the identified system as the plant and a P controller. Use a gain $KP = \qty{-10}{\percent\per\cm}$, a target distance of \qty{25}{\cm} and an initial distance of \qty{80}{\cm} for testing. Use the integration method ode3 (Bogacki-Shampine) with a fixed step size of \qty{20}{\ms}. Do not forget the rate-limit-block (see 3.7) and use a value of $\frac{\qty{4}{\percent}}{20\,\text{ms}}$.
+                \vspace{2mm}\\
+                Plot the reference variable, the manipulated variable and the controlled variable.
+                \vspace{2mm}\\
+                What does this sampling time mean in terms of control engineering?\\
+                Which nonlinear element do you also need to add to the simulation to simulate real conditions?}}
+            \end{displaycquote}\label{task(f)}
 
 
 
