@@ -32,6 +32,7 @@
 *.ilg
 *.ind
 *.ist
+*.tdo
 
 # Minted
 _minted*
