@@ -49,14 +49,193 @@
     \chapter{Preparations}\label{chap:preperations}
 
         \section{(aV) Steps to solve the control task}
+            In order to solve a control problem, a mathematical model of the controlled system is first developed and the performance requirements of the control system are defined. The controller is then designed based on this, during which the structure and parameters of the control law are specified. Finally, the controller is implemented in hardware or software and validated on the actual system. This process is illustrated in Figure \ref{fig:loesungsweg_lunze} according to Lunze~\cite{Lunze2016}.
+
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[>=stealth, line width=0.8pt, scale=0.8, node distance=2.8cm]
+                    
+                    % Knoten
+                    \node (g) {Controlled system, quality requirements};
+                    \node[below=of g] (model) {Model of the controlled system and performance requirements};
+                    \node[below=of model] (law) {Controller law};
+                    \node[below=of law] (ctrl) {Controller};
+                    \draw[->] (g) -- (model)
+                    node[midway, right=0.4cm] {\textit{Modeling}};
+                    \draw[->] (model) -- (law)
+                    node[midway, right=0.4cm] {\textit{Controller Design}};
+                    \draw[->] (law) -- (ctrl)
+                    node[midway, right=0.4cm] {\textit{Implementation}};
+                    
+                \end{tikzpicture}
+                \caption{Approach to control engineering problems according to Lunze~\cite{Lunze2016}}
+                \label{fig:loesungsweg_lunze}
+            \end{figure}
+
+            \cleardoubleemptypage
 
         \section{(bV) Block diagram of the control loop}
+            
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[>=stealth, line width=0.8pt,
+                    scale=0.7, every node/.style={transform shape}]
+                    
+                    %--- Blöcke -------------------------------------------------------------
+                    \node[draw, minimum width=4cm, minimum height=3cm] (motor) {};
+                    \node[draw, minimum width=4cm, minimum height=3cm, right=2.5cm of motor] (drive) {};
+                    \node[draw, minimum width=4cm, minimum height=3cm, right=2.5cm of drive] (kin) {};
+                    
+                    %--- Beschriftungen oberhalb der Blöcke --------------------------------
+                    \node[above=4pt of motor.north] {$K_{P1} \quad T_1$};
+                    \node[above=4pt of drive.north] {$K_{P2}$};
+                    \node[above=4pt of kin.north] {$K_I$};
+                    
+                    %--- Beschriftungen unterhalb der Blöcke --------------------------------
+                    \node[below=4pt of motor.south] {Motor (PT$_1$ element)};
+                    \node[below=4pt of drive.south] {Drive (P-element)};
+                    \node[below=4pt of kin.south] {Kinematics (I-element)};
+                    
+                    %--- Verbindungs-Pfeile mit Signalbezeichnungen -------------------------
+                    \draw[->] ($(motor.west)+(-2.0,0)$) -- (motor.west)
+                    node[midway, above] {$\delta_\text{Mot} \,/\, \%$};
+                    
+                    \draw[->] (motor.east) -- (drive.west)
+                    node[midway, above] {$\omega \,/\, \mathrm{rad/s}$};
+                    
+                    \draw[->] (drive.east) -- (kin.west)
+                    node[midway, above] {$v_\text{EV3} \,/\, \mathrm{cm/s}$};
+                    
+                    \draw[->] (kin.east) -- ($(kin.east)+(2.0,0)$)
+                    node[midway, above] {$x_\text{EV3} \,/\, \mathrm{cm}$};
+                    
+                    %-----------------------------------------------------------------------
+                    % Innenleben der Blöcke: Kennlinien (schematisch)
+                    %-----------------------------------------------------------------------
+                    
+                    % Motorblock: PT1-ähnliche Sprungantwort
+                    \path (motor.south west) ++(0.5,0.5) coordinate (mO);
+                    \draw (mO) -- ++(0,2.0);
+                    \draw (mO) -- ++(2.6,0);
+                    \draw (mO)
+                    .. controls ++(0.4,1.2) and ++(-0.6,0.0) ..
+                    ++(1.4,1.8) -- ++(0.8,0);
+                    
+                    % Antriebsblock: P-Glied
+                    \path (drive.south west) ++(0.5,0.5) coordinate (dO);
+                    \draw (dO) -- ++(0,2.0);
+                    \draw (dO) -- ++(2.6,0);
+                    \draw ($(dO)+(0.0,1.3)$) -- ++(2.6,0);
+                    
+                    % Kinematikblock: I-Glied
+                    \path (kin.south west) ++(0.5,0.5) coordinate (kO);
+                    \draw (kO) -- ++(0,2.0);
+                    \draw (kO) -- ++(2.6,0);
+                    \draw (kO) -- ++(2.3,1.7);
+                    
+                \end{tikzpicture}
+                \caption{The block diagram illustrates the configuration of the EV3 robot.}
+                \label{fig:ev3_blockdiagramm}
+            \end{figure}
 
-        \section{(cV) Block diagram according to DIN IEC 60050-351}
-
-    
+        The control process of the EV3 robot (Figure \ref{fig:ev3_blockdiagramm}) begins with the duty cycle $\delta$, which is provided as an input signal in the form of pulse width modulation (PWM). This signal determines the average voltage of the DC motor and, consequently, the torque and rotational speed. The resulting rotational speed is transmitted to the wheels via the gearbox and converted into the robot's linear translational speed. Finally, the robot's kinematics describe the relationship between the rotational movements of the individual wheels and the resulting overall movement of the robot.
 
 
+        \section{(cV) Block diagram of a distance control system (according to DIN IEC 60050-351).}
+
+            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351. The system consists of a reference variable $w$ (target distance), a control difference $e$, a controller output $m$, a manipulated variable $y$, a disturbance variable $z_y$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element ($K_\mathrm{P}$) processes the control difference to generate the controller output, which the final controlling element converts into the manipulated variable acting on the controlled system. The disturbance $z_y$ acts additively on the manipulated variable, and the measuring element derives the actual distance from the distance travelled, $x = x_0 - x_\mathrm{traveled}$, providing the feedback variable $r$.
+
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[
+                        auto,
+                        >=stealth,
+                        line width=0.7pt,
+                        scale=0.78,
+                        transform shape,
+                        node distance=2.4cm,
+                        block/.style={
+                                draw,
+                                rectangle,
+                                minimum height=2.4em,
+                                minimum width=4.5em,
+                                align=center,
+                                font = {\scriptsize}
+                            },
+                        sum/.style={
+                                draw,
+                                circle,
+                                minimum size=0.6cm,
+                                inner sep=0pt
+                            },
+                        dnode/.style={
+                                draw,
+                                circle,
+                                minimum size=0.45cm,
+                                inner sep=0pt
+                            },
+                        input/.style={coordinate},
+                        output/.style={coordinate},
+                        pinstyle/.style={pin edge={to-,thin,black}}
+                    ]
+
+                    % --- Forward path nodes -------------------------------------------
+                    \node [input, name=input] {};
+                    \node [sum, right of=input]                       (sum)   {};
+                    \node [block, right of=sum]                       (ctrl)  {Controlling element\\ ($K_\mathrm{P}$)\\ \emph{(Reglelglied)}};
+                    \node [block, right of=ctrl, node distance=3.6cm] (actor) {Controlling\\ element\\ (\emph{Stellglied})};
+                    % disturbance summing node on the y-line
+                    \node [dnode, right of=actor, node distance=2.0cm] (dsum) {};
+                    \node [block, right of=dsum, node distance=2.4cm]
+                    (plant) {Controlled system\\ (vehicle drive)\\ \emph{(Regelstrecke)}};
+                    \node [output, right of=plant, node distance=2.8cm] (output) {};
+
+                    % --- Disturbance into the summing node ----------------------------
+                    \node [above of=dsum, node distance=1.8cm] (dist) {$z_y$ (\emph{Störgröße})};
+                    \draw [->] (dist) -- node[pos=0.75, right] {\small $+$} (dsum);
+
+                    % --- Manipulated-variable edge through disturbance node -----------
+                    \draw [->] (actor) -- node[name=y, pos=0.4] {$y$} node[pos=0.78, below] {\small $+$} (dsum);
+                    \draw [->] (dsum)  -- (plant);
+
+                    % --- Measuring element in the feedback path (centred) -------------
+                    \node [block, below of=dsum, node distance=2.8cm]
+                    (sensor)
+                    {Measuring element\\ (odometry: $x = x_0 - x_\mathrm{traveled}$)\\ \emph{(Messglied)}};
+
+                    % --- Forward connections ------------------------------------------
+                    \draw [->] (input) -- node {$w$} (sum);
+                    \draw [->] (sum)   -- node {$e$} (ctrl);
+                    \draw [->] (ctrl)  -- node[pos=0.5] {$m$} (actor);
+                    \draw [->] (plant) -- node [name=x] {$x$} (output);
+
+                    % --- Feedback connections -----------------------------------------
+                    \coordinate (tap) at ($(plant)!0.55!(output)$);
+                    \node[circle, fill, inner sep=1.2pt] at (tap) {};
+                    \draw [->] (tap) |- (sensor.east);
+                    \draw [->] (sensor.west) -| node[pos=0.99] {$-$}
+                    node[near end] {$r$} (sum);
+
+                    % --- Sign of the reference input at the summing junction ----------
+                    \node at ([shift={(-0.30cm,0.18cm)}]sum.north west) {\small $+$};
+
+                    % --- Legend (DIN IEC 60050-351 designations) ----------------------
+                    \node[align=left, font=\footnotesize, anchor=north west]
+                    at (sensor.south -| input |- sensor.south) [yshift=-0.8cm]
+                    {%
+                        $w$: reference variable (\emph{Führungsgröße}, target distance)\\
+                        $e$: control difference (\emph{Regeldifferenz}), $e = w - r$\\
+                        $m$: controller output (\emph{Reglerausgangsgröße})\\
+                        $y$: manipulated variable (\emph{Stellgröße})\\
+                        $z_y$: disturbance variable (\emph{Störgröße})\\
+                        $x$: controlled variable (\emph{Regelgröße}, actual distance)\\
+                        $r$: feedback variable (\emph{Rückführgröße})%
+                    };
+
+                \end{tikzpicture}
+                \caption{Block diagram of a distance control system using a P controller according to DIN IEC 60050-351}
+                \label{fig:distance_control_block_diagram}
+            \end{figure}
 
 
     \chapter{Experiment T4: RetBot system identification, part 2}\label{ch:ExperimentT4}
@@ -66,7 +245,7 @@
         \section{(e)}
 
 
-        Section{(f)}
+        \section{(f)}
 
 
 

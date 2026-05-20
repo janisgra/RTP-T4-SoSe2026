@@ -35,3 +35,7 @@
 
 # Minted
 _minted*
+
+# error files
+*.bbl-SAVE-ERROR
+*.bcf-SAVE-ERROR
