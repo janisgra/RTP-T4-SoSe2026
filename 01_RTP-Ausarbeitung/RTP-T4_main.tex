@@ -249,26 +249,46 @@
                 \footnotesize{\textit{(d) Use the recorded data from the previous experiment and write a Matlab program that calculates the data required for the system description for both the left and right drives. Draw graphs containing the four different conditions and the tangents, ... you applied for determining the system behavior. Consider a reasonable time frame, rather than adopting a ``take what's available'' approach.}} 
             \end{displaycquote}\label{task(d)}
 
+            Each drive train is modelled as an IT$_1$ element with the transfer function $G(s) = K_I / [\,s\,(T_1\,s + 1)\,]$, mapping the input duty cycle $\delta\,/\,\%$ to the traveled distance $x\,/\,\mathrm{cm}$ of the wheel. The two parameters --- the integral gain $K_I$ and the time constant $T_1$ --- are extracted from the recorded step responses by an asymptotic-tangent procedure, carried out separately for the left wheel (QEI1) and the right wheel (QEI2) at each of the four duty cycles $\delta \in \{25,\,50,\,75,\,100\}\,\%$.
+
+            The QEI step counts are first converted into a traveled distance via the wheel circumference,
+            \begin{equation}
+                x = \frac{\text{steps}}{360^\circ} \cdot d_R \cdot \pi, \qquad d_R = \SI{5.6}{\cm},
+                \label{eq:weg_aus_winkel}
+            \end{equation}
+            where one encoder revolution ($360^\circ$) advances the wheel by its circumference $d_R\,\pi$.
+
+            For each step response $x(t)$, the asymptotic tangent $x_\infty(t) = a\,t + b$ is fitted by linear regression to the settled (linear) tail of the recording. Because the IT$_1$ step response asymptotically approaches the ramp $K_I\,\delta\,(t - T_1)$, the tangent slope yields the integral gain normalised per duty-cycle percentage,
+            \begin{equation}
+                K_I = \frac{a}{\delta},
+            \end{equation}
+            and its time-axis intersection yields the time constant,
+            \begin{equation}
+                T_1 = -\frac{b}{a} - t_\text{step},
+            \end{equation}
+            where $t_\text{step}$ denotes the instant at which the duty cycle is applied. The four per-duty-cycle estimates are then averaged for each motor (Figures~\ref{fig:QEI_left} and \ref{fig:QEI_right}), giving the operating-point-independent parameters $\overline{K_I}$ and $\overline{T_1}$ that enter the differential equations in Section~\ref{sec:e-differential-equations}.
 
             \begin{figure}[H]
                 \centering
-                \includegraphics[width=\textwidth]{figure/it1-tangents-left.pdf}
-                \caption{Left drive (motor 0, QEI1): measured step responses and fitted asymptotic tangents for all four duty cycles. The right panel zooms onto the time-axis intersections that yield $T_1$.}
+                \includegraphics[width=\textwidth]{figure/it1-distance-left.pdf}
+                \caption{Left drive (motor 0, QEI1): traveled distance $x(t)$ for all four duty cycles together with the fitted asymptotic tangents. Per-duty-cycle values of $K_I$ and $T_1$ are given in the legend; the right panel zooms onto the time-axis intersections that yield $T_1$ and shows the averaged IT$_1$ parameters $\overline{K_I}$, $\overline{T_1}$, and the resulting transfer function $G(s)$.}
                 \label{fig:QEI_left}
             \end{figure}
 
             \begin{figure}[H]
                 \centering
-                \includegraphics[width=\textwidth]{figure/it1-tangents-right.pdf}
-                \caption{Right drive (motor 1, QEI2): measured step responses and fitted asymptotic tangents for all four duty cycles. The right panel zooms onto the time-axis intersections that yield $T_1$.}
+                \includegraphics[width=\textwidth]{figure/it1-distance-right.pdf}
+                \caption{Right drive (motor 1, QEI2): traveled distance $x(t)$ for all four duty cycles together with the fitted asymptotic tangents. Per-duty-cycle values of $K_I$ and $T_1$ are given in the legend; the right panel zooms onto the time-axis intersections that yield $T_1$ and shows the averaged IT$_1$ parameters $\overline{K_I}$, $\overline{T_1}$, and the resulting transfer function $G(s)$.}
                 \label{fig:QEI_right}
             \end{figure}
 
-            \todo[inline]{write short documentation paragraph about the program and the graphs}
-            
-            notable mention is the offset of the QEI values of both \qty{25}{\percent} duty cycle measurements.
+            \subsection{Resulting Parameters}
 
-            \begin{lstlisting}
+            The per-duty-cycle results and their averages are summarised in Listing~\ref{lst:it1-params}. The integral gain is consistent across duty cycles --- the relative standard deviation stays below \qty{5}{\percent} for both motors --- which confirms the validity of the IT$_1$ structure within the considered operating range. The time constants scatter more strongly (up to $\sigma_{T_1} \approx \qty{9}{\milli\second}$ on the right drive), reflecting the higher sensitivity of $T_1$ to encoder quantisation at low duty cycles, where the resolution of one QEI step ($\approx \qty{0.049}{\centi\metre}$) is appreciable relative to the slow rise of the response. The same effect produces the small initial offset visible in both \qty{25}{\percent} traces; it does not bias the identification because only the linear tail of the recording enters the tangent regression.
+
+            The two drives behave near-symmetrically: their averaged integral gains $\overline{K_{I,L}} = \qty{0.437}{\centi\metre\per\second\per\percent}$ and $\overline{K_{I,R}} = \qty{0.446}{\centi\metre\per\second\per\percent}$ agree within one standard deviation, and their time constants differ by less than \qty{5}{\milli\second}. The averaged parameters $\overline{K_I}$ and $\overline{T_1}$ obtained here are used directly in the differential equations and transfer functions of Section~\ref{sec:e-differential-equations}.
+
+            \begin{lstlisting}[caption={Identified IT$_1$ parameters per duty cycle and averaged values for the left and right drive.},label={lst:it1-params}]
 motor drive   delta/%  slope_inf/cm/s  K_I/cm/(s*%)    T_1/ms
 Left motor (motor 0, QEI1)  25 %   25.0000         10.2724        0.4109   59.1133
 Left motor (motor 0, QEI1)  50 %   50.0000         21.8954        0.4379   50.9466
@@ -287,24 +307,8 @@ Left motor (motor 0, QEI1)
 Right motor (motor 1, QEI2)
     K_I_avg = 0.4465 cm/(s*%)   (sd 0.0172)
     T_1_avg = 52.21 ms = 0.0522 s   (sd 9.11 ms)
-    G(s) = 0.446 / (s (0.0522 s + 1))                
+    G(s) = 0.446 / (s (0.0522 s + 1))
             \end{lstlisting}
-
-
-            The distance traveled by the wheels is required to analyze the measurement data. To this end, the recorded QEI signals are converted into distances $x_i$ using the following equation:
-            \begin{equation}
-                x_i = \frac{steps}{360^\circ} \cdot d_R \cdot \pi,
-                \label{eq:weg_aus_winkel}
-            \end{equation}
-            where $d_R$ denotes the wheel diameter. For the EV3 robot in question, $d_R = \SI{5.6}{\cm}$. The calculation is performed separately for the left wheel and the right wheel, for different duty cycles in each case.
-
-
-            
-            \todo[inline]{text}
-
-            \subsection{Resulting Parameters}
-
-            \todo[inline]{add resulting parameters and short paragrahp}
 
             \cleardoubleemptypage
 
@@ -401,6 +405,13 @@ Right motor (motor 1, QEI2)
             \todo[inline]{create Simulink simulation of the control loop}
             \missingfigure{image of the the simulink control loop}\label{fig:simulink_control_loop}
 
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{figure/simulink_system.pdf}
+                \caption{Simulink model of the distance control loop with the identified IT$_1$ parameters for both drives}
+                \label{fig:simulink_control_loop}
+            \end{figure}
+
             \missingfigure{plot of  reference variable, the manipulated variable and the controlled variable from the Simulink simulation}\label{fig:ref_varaiables_simulink}
 
             \todo[inline]{write short documentation paragraph about the Simulink simulation and the resulting plot}
@@ -409,6 +420,11 @@ Right motor (motor 1, QEI2)
 
             \todo[inline]{explain what non liniear elemet is needed for the simulation to real conditaions transfer}
 
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.6\textwidth]{figure/simulinkoutput.pdf}
+                \caption{Simulink output showing the $x_e$ distance output for both motors and the $x_a$ controll system input.}
+            \end{figure}
 
 
 

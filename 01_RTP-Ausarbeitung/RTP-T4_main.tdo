@@ -1,9 +1,6 @@
-\contentsline {todo}{write short documentation paragraph about the program and the graphs}{8}{section*.8}%
-\contentsline {todo}{text}{9}{section*.9}%
-\contentsline {todo}{add resulting parameters and short paragrahp}{9}{section*.10}%
-\contentsline {todo}{create Simulink simulation of the control loop}{12}{section*.11}%
-\contentsline {todo}{Figure: image of the the simulink control loop}{12}{section*.11}%
-\contentsline {todo}{Figure: plot of reference variable, the manipulated variable and the controlled variable from the Simulink simulation}{12}{section*.11}%
-\contentsline {todo}{write short documentation paragraph about the Simulink simulation and the resulting plot}{12}{section*.12}%
-\contentsline {todo}{explain the effect of the sampeling time}{12}{section*.13}%
-\contentsline {todo}{explain what non liniear elemet is needed for the simulation to real conditaions transfer}{12}{section*.14}%
+\contentsline {todo}{create Simulink simulation of the control loop}{12}{section*.8}%
+\contentsline {todo}{Figure: image of the the simulink control loop}{12}{section*.8}%
+\contentsline {todo}{Figure: plot of reference variable, the manipulated variable and the controlled variable from the Simulink simulation}{12}{figure.caption.9}%
+\contentsline {todo}{write short documentation paragraph about the Simulink simulation and the resulting plot}{12}{section*.10}%
+\contentsline {todo}{explain the effect of the sampeling time}{12}{section*.11}%
+\contentsline {todo}{explain what non liniear elemet is needed for the simulation to real conditaions transfer}{12}{section*.12}%
