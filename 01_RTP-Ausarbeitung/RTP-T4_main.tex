@@ -1,0 +1,486 @@
+\documentclass[12pt, oneside, a4paper]{scrreprt}
+
+\input{style.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+    \todototoc
+    \listoftodos
+
+    \begin{titlepage}
+
+        \begin{tabular}{l r} 
+            \includegraphics[width=0.5\textwidth]{figure/oth-regensburg-logo.jpg}
+            &
+        \end{tabular}
+        \vspace{1cm}
+
+        \begin{minipage} [c] [8.5cm] [b] {\textwidth}
+            \Huge{
+                \begin{center}
+                    \textbf{Praktikum Regelungstechnik (RTP)}\\[0.8cm]
+                    \textbf{Versuch T4:\\RetBot system identification, part II} \\[1.5cm]
+                    \par
+                    %{\large Versuch 3}\\[1cm]
+                    {\large \today} \\[1cm]
+                \end{center}
+                }
+        \end{minipage}
+
+        \vspace{0.1cm}
+
+        \begin{minipage} [c] [3.5cm] [b] {\textwidth}
+            \begin{center}
+                \vspace{0.3cm}
+                Gruppe 38\\
+                Marius Off\\
+                Janis Graf\\
+                \vspace{0.5cm}
+                %\texttt{Dokument-Version: 02}\\
+            \end{center}
+        \end{minipage}
+
+    \end{titlepage}
+
+    \tableofcontents
+
+
+    \chapter{Preparations}\label{chap:preperations}
+
+        \section{(aV) Steps to solve the control task}
+            In order to solve a control problem, a mathematical model of the controlled system is first developed and the performance requirements of the control system are defined. The controller is then designed based on this, during which the structure and parameters of the control law are specified. Finally, the controller is implemented in hardware or software and validated on the actual system. This process is illustrated in Figure \ref{fig:loesungsweg_lunze} according to Lunze~\cite{Lunze2016}.
+
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[>=stealth, line width=0.8pt, scale=0.8, node distance=2.8cm]
+                    
+                    % Knoten
+                    \node (g) {Controlled system, quality requirements};
+                    \node[below=of g] (model) {Model of the controlled system and performance requirements};
+                    \node[below=of model] (law) {Controller law};
+                    \node[below=of law] (ctrl) {Controller};
+                    \draw[->] (g) -- (model)
+                    node[midway, right=0.4cm] {\textit{Modeling}};
+                    \draw[->] (model) -- (law)
+                    node[midway, right=0.4cm] {\textit{Controller Design}};
+                    \draw[->] (law) -- (ctrl)
+                    node[midway, right=0.4cm] {\textit{Implementation}};
+                    
+                \end{tikzpicture}
+                \caption{Approach to control engineering problems according to Lunze~\cite{Lunze2016}}
+                \label{fig:loesungsweg_lunze}
+            \end{figure}
+
+            \cleardoubleemptypage
+
+        \section{(bV) Block diagram of the control loop}
+            
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[>=stealth, line width=0.8pt,
+                    scale=0.7, every node/.style={transform shape}]
+                    
+                    %--- Blöcke -------------------------------------------------------------
+                    \node[draw, minimum width=4cm, minimum height=3cm] (motor) {};
+                    \node[draw, minimum width=4cm, minimum height=3cm, right=2.5cm of motor] (drive) {};
+                    \node[draw, minimum width=4cm, minimum height=3cm, right=2.5cm of drive] (kin) {};
+                    
+                    %--- Beschriftungen oberhalb der Blöcke --------------------------------
+                    \node[above=4pt of motor.north] {$K_{P1} \quad T_1$};
+                    \node[above=4pt of drive.north] {$K_{P2}$};
+                    \node[above=4pt of kin.north] {$K_I$};
+                    
+                    %--- Beschriftungen unterhalb der Blöcke --------------------------------
+                    \node[below=4pt of motor.south] {Motor (PT$_1$ element)};
+                    \node[below=4pt of drive.south] {Drive (P-element)};
+                    \node[below=4pt of kin.south] {Kinematics (I-element)};
+                    
+                    %--- Verbindungs-Pfeile mit Signalbezeichnungen -------------------------
+                    \draw[->] ($(motor.west)+(-2.0,0)$) -- (motor.west)
+                    node[midway, above] {$\delta_\text{Mot} \,/\, \%$};
+                    
+                    \draw[->] (motor.east) -- (drive.west)
+                    node[midway, above] {$\omega \,/\, \mathrm{rad/s}$};
+                    
+                    \draw[->] (drive.east) -- (kin.west)
+                    node[midway, above] {$v_\text{EV3} \,/\, \mathrm{cm/s}$};
+                    
+                    \draw[->] (kin.east) -- ($(kin.east)+(2.0,0)$)
+                    node[midway, above] {$x_\text{EV3} \,/\, \mathrm{cm}$};
+                    
+                    %-----------------------------------------------------------------------
+                    % Innenleben der Blöcke: Kennlinien (schematisch)
+                    %-----------------------------------------------------------------------
+                    
+                    % Motorblock: PT1-ähnliche Sprungantwort
+                    \path (motor.south west) ++(0.5,0.5) coordinate (mO);
+                    \draw (mO) -- ++(0,2.0);
+                    \draw (mO) -- ++(2.6,0);
+                    \draw (mO)
+                    .. controls ++(0.4,1.2) and ++(-0.6,0.0) ..
+                    ++(1.4,1.8) -- ++(0.8,0);
+                    
+                    % Antriebsblock: P-Glied
+                    \path (drive.south west) ++(0.5,0.5) coordinate (dO);
+                    \draw (dO) -- ++(0,2.0);
+                    \draw (dO) -- ++(2.6,0);
+                    \draw ($(dO)+(0.0,1.3)$) -- ++(2.6,0);
+                    
+                    % Kinematikblock: I-Glied
+                    \path (kin.south west) ++(0.5,0.5) coordinate (kO);
+                    \draw (kO) -- ++(0,2.0);
+                    \draw (kO) -- ++(2.6,0);
+                    \draw (kO) -- ++(2.3,1.7);
+                    
+                \end{tikzpicture}
+                \caption{The block diagram illustrates the configuration of the EV3 robot.}
+                \label{fig:ev3_blockdiagramm}
+            \end{figure}
+
+        The control process of the EV3 robot (Figure \ref{fig:ev3_blockdiagramm}) begins with the duty cycle $\delta$, which is provided as an input signal in the form of pulse width modulation (PWM). This signal determines the average voltage of the DC motor and, consequently, the torque and rotational speed. The resulting rotational speed is transmitted to the wheels via the gearbox and converted into the robot's linear translational speed. Finally, the robot's kinematics describe the relationship between the rotational movements of the individual wheels and the resulting overall movement of the robot.
+
+
+        \section{(cV) Block diagram of a distance control system (according to DIN IEC 60050-351).}
+
+            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351~\cite{DIN_IEC_60050-351_2014}. The system consists of a reference variable $w$ (target distance), a control difference $e$, a controller output $m$, a manipulated variable $y$, a disturbance variable $z_y$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element ($K_\mathrm{P}$) processes the control difference to generate the controller output, which the final controlling element converts into the manipulated variable acting on the controlled system. The disturbance $z_y$ acts additively on the manipulated variable, and the measuring element derives the actual distance from the distance travelled, $x = x_0 - x_\mathrm{traveled}$, providing the feedback variable $r$.
+
+            \begin{figure}[H]
+                \centering
+                \begin{tikzpicture}[
+                        auto,
+                        >=stealth,
+                        line width=0.7pt,
+                        scale=0.78,
+                        transform shape,
+                        node distance=2.4cm,
+                        block/.style={
+                                draw,
+                                rectangle,
+                                minimum height=2.4em,
+                                minimum width=4.5em,
+                                align=center,
+                                font = {\scriptsize}
+                            },
+                        sum/.style={
+                                draw,
+                                circle,
+                                minimum size=0.6cm,
+                                inner sep=0pt
+                            },
+                        dnode/.style={
+                                draw,
+                                circle,
+                                minimum size=0.45cm,
+                                inner sep=0pt
+                            },
+                        input/.style={coordinate},
+                        output/.style={coordinate},
+                        pinstyle/.style={pin edge={to-,thin,black}}
+                    ]
+
+                    % --- Forward path nodes -------------------------------------------
+                    \node [input, name=input] {};
+                    \node [sum, right of=input]                       (sum)   {};
+                    \node [block, right of=sum]                       (ctrl)  {Controlling element\\ ($K_\mathrm{P}$)\\ \emph{(Reglelglied)}};
+                    \node [block, right of=ctrl, node distance=3.6cm] (actor) {Controlling\\ element\\ (\emph{Stellglied})};
+                    % disturbance summing node on the y-line
+                    \node [dnode, right of=actor, node distance=2.0cm] (dsum) {};
+                    \node [block, right of=dsum, node distance=2.4cm]
+                    (plant) {Controlled system\\ (vehicle drive)\\ \emph{(Regelstrecke)}};
+                    \node [output, right of=plant, node distance=2.8cm] (output) {};
+
+                    % --- Disturbance into the summing node ----------------------------
+                    \node [above of=dsum, node distance=1.8cm] (dist) {$z_y$ (\emph{Störgröße})};
+                    \draw [->] (dist) -- node[pos=0.75, right] {\small $+$} (dsum);
+
+                    % --- Manipulated-variable edge through disturbance node -----------
+                    \draw [->] (actor) -- node[name=y, pos=0.4] {$y$} node[pos=0.78, below] {\small $+$} (dsum);
+                    \draw [->] (dsum)  -- (plant);
+
+                    % --- Measuring element in the feedback path (centred) -------------
+                    \node [block, below of=dsum, node distance=2.8cm]
+                    (sensor)
+                    {Measuring element\\ (odometry: $x = x_0 - x_\mathrm{traveled}$)\\ \emph{(Messglied)}};
+
+                    % --- Forward connections ------------------------------------------
+                    \draw [->] (input) -- node {$w$} (sum);
+                    \draw [->] (sum)   -- node {$e$} (ctrl);
+                    \draw [->] (ctrl)  -- node[pos=0.5] {$m$} (actor);
+                    \draw [->] (plant) -- node [name=x] {$x$} (output);
+
+                    % --- Feedback connections -----------------------------------------
+                    \coordinate (tap) at ($(plant)!0.55!(output)$);
+                    \node[circle, fill, inner sep=1.2pt] at (tap) {};
+                    \draw [->] (tap) |- (sensor.east);
+                    \draw [->] (sensor.west) -| node[pos=0.99] {$-$}
+                    node[near end] {$r$} (sum);
+
+                    % --- Sign of the reference input at the summing junction ----------
+                    \node at ([shift={(-0.30cm,0.18cm)}]sum.north west) {\small $+$};
+
+                    % --- Legend (DIN IEC 60050-351 designations) ----------------------
+                    \node[align=left, font=\footnotesize, anchor=north west]
+                    at (sensor.south -| input |- sensor.south) [yshift=-0.8cm]
+                    {%
+                        $w$: reference variable (\emph{Führungsgröße}, target distance)\\
+                        $e$: control difference (\emph{Regeldifferenz}), $e = w - r$\\
+                        $m$: controller output (\emph{Reglerausgangsgröße})\\
+                        $y$: manipulated variable (\emph{Stellgröße})\\
+                        $z_y$: disturbance variable (\emph{Störgröße})\\
+                        $x$: controlled variable (\emph{Regelgröße}, actual distance)\\
+                        $r$: feedback variable (\emph{Rückführgröße})%
+                    };
+
+                \end{tikzpicture}
+                \caption{Block diagram of a distance control system using a P controller according to DIN IEC 60050-351}
+                \label{fig:distance_control_block_diagram}
+            \end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    \chapter{Experiment T4: RetBot system identification, part 2}\label{ch:ExperimentT4}
+        \section{(d) System description}\label{sec:d-system-description}
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(d) Use the recorded data from the previous experiment and write a Matlab program that calculates the data required for the system description for both the left and right drives. Draw graphs containing the four different conditions and the tangents, ... you applied for determining the system behavior. Consider a reasonable time frame, rather than adopting a ``take what's available'' approach.}} 
+            \end{displaycquote}\label{task(d)}
+
+
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=\textwidth]{figure/it1-tangents-left.pdf}
+                \caption{Left drive (motor 0, QEI1): measured step responses and fitted asymptotic tangents for all four duty cycles. The right panel zooms onto the time-axis intersections that yield $T_1$.}
+                \label{fig:QEI_left}
+            \end{figure}
+
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=\textwidth]{figure/it1-tangents-right.pdf}
+                \caption{Right drive (motor 1, QEI2): measured step responses and fitted asymptotic tangents for all four duty cycles. The right panel zooms onto the time-axis intersections that yield $T_1$.}
+                \label{fig:QEI_right}
+            \end{figure}
+
+            \todo[inline]{write short documentation paragraph about the program and the graphs}
+            
+            notable mention is the offset of the QEI values of both \qty{25}{\percent} duty cycle measurements.
+
+            \begin{lstlisting}
+motor drive   delta/%  slope_inf/cm/s  K_I/cm/(s*%)    T_1/ms
+Left motor (motor 0, QEI1)  25 %   25.0000         10.2724        0.4109   59.1133
+Left motor (motor 0, QEI1)  50 %   50.0000         21.8954        0.4379   50.9466
+Left motor (motor 0, QEI1)  75 %   75.0000         33.6763        0.4490   63.0547
+Left motor (motor 0, QEI1) 100 %  100.0000         44.9191        0.4492   55.3605
+Right motor (motor 1, QEI2)  25 %   25.0000         10.5382        0.4215   40.4807
+Right motor (motor 1, QEI2)  50 %   50.0000         22.4389        0.4488   49.6909
+Right motor (motor 1, QEI2)  75 %   75.0000         34.2385        0.4565   57.9448
+Right motor (motor 1, QEI2) 100 %  100.0000         45.8991        0.4590   60.7124
+
+Left motor (motor 0, QEI1)
+    K_I_avg = 0.4368 cm/(s*%)   (sd 0.0180)
+    T_1_avg = 57.12 ms = 0.0571 s   (sd 5.18 ms)
+    G(s) = 0.437 / (s (0.0571 s + 1))
+
+Right motor (motor 1, QEI2)
+    K_I_avg = 0.4465 cm/(s*%)   (sd 0.0172)
+    T_1_avg = 52.21 ms = 0.0522 s   (sd 9.11 ms)
+    G(s) = 0.446 / (s (0.0522 s + 1))                
+            \end{lstlisting}
+
+
+            The distance traveled by the wheels is required to analyze the measurement data. To this end, the recorded QEI signals are converted into distances $x_i$ using the following equation:
+            \begin{equation}
+                x_i = \frac{steps}{360^\circ} \cdot d_R \cdot \pi,
+                \label{eq:weg_aus_winkel}
+            \end{equation}
+            where $d_R$ denotes the wheel diameter. For the EV3 robot in question, $d_R = \SI{5.6}{\cm}$. The calculation is performed separately for the left wheel and the right wheel, for different duty cycles in each case.
+
+
+            
+            \todo[inline]{text}
+
+            \subsection{Resulting Parameters}
+
+            \todo[inline]{add resulting parameters and short paragrahp}
+
+            \cleardoubleemptypage
+
+        \section{(e) Differential equations and transfer functions for both drives.}\label{sec:e-differential-equations}
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(e) Specify the descriptive differential equations and transfer functions for both the left and right drives (note: average value across the different duty cycles). Compare the step response of the identified system with the measured data to identify any inconsistencies.}}
+            \end{displaycquote}\label{task(e)}
+
+            The following paragraphs describe the differential equations and transfer functions for both the left and right drives using constants from the previous section.
+
+            The differential equation for an IT$_1$ system is given by:
+            \begin{equation}
+                T_1 \dot{x}(t) + x(t) = K_I \int x_e(t) \, dt
+            \end{equation}
+
+            The transfer function for an IT$_1$ system is given by:
+            \begin{equation}
+                G(s) = \frac{K_I}{s(T_1 s + 1)} 
+            \end{equation}
+
+            \begin{equation}
+                h(t) = K_I \left( t - T_1 (1 - e^{-\frac{t}{T_1}}) \right)
+            \end{equation}
+
+            \subsection{Left Motor}\label{subsec:left-motor}
+
+            The parameters of the left drive (motor~0, QEI1) were identified individually for each of the four duty cycles and then averaged. The integral gain $K_I$ was obtained from the slope of the asymptotic tangent (normalised per duty-cycle percentage), and the time constant $T_1$ from the intersection of that tangent with the time axis.
+
+            For the left motor, the averaged parameters are given by Figure \ref{fig:QEI_left}:
+
+            \begin{equation}
+                K_{I,L} = \qty{0.437}{\centi\metre\per\second\per\percent}, \qquad
+                T_{1,L} = \qty{57.1}{\milli\second} = \qty{0.0571}{\second}
+            \end{equation}
+
+            This yields the differential equation for the velocity $v_L(t)$:
+
+            \begin{equation}
+                T_{1,L}\,\dot{v}_L(t) + v_L(t) = K_{I,L}\,\delta_L(t)
+                \quad\Rightarrow\quad
+                \qty{0.0571}{\second}\,\dot{v}_L(t) + v_L(t) = \qty{0.437}{\centi\metre\per\second\per\percent}\,\delta_L(t)
+            \end{equation}
+
+            The corresponding transfer function $G_L(s)$ is:
+
+            \begin{equation}
+                G_L(s) = \frac{K_{I,L}}{s\,(T_{1,L}\,s + 1)} = \frac{0.437}{s\,(0.0571\,s + 1)}
+            \end{equation}
+
+
+            \subsection{Right Motor}\label{subsec:right-motor}
+
+            The parameters of the right drive (motor~1, QEI2) were identified using the same procedure as for the left drive: $K_I$ from the normalised asymptotic-tangent slope and $T_1$ from its time-axis intersection, averaged over the four duty cycles.
+
+            For the right motor, the averaged parameters are given by Figure \ref{fig:QEI_right}:
+
+            \begin{equation}
+                K_{I,R} = \qty{0.446}{\centi\metre\per\second\per\percent}, \qquad
+                T_{1,R} = \qty{52.2}{\milli\second} = \qty{0.0522}{\second}
+            \end{equation}
+
+            This yields the differential equation for the velocity $v_R(t)$:
+
+            \begin{equation}
+                T_{1,R}\,\dot{v}_R(t) + v_R(t) = K_{I,R}\,\delta_R(t)
+                \quad\Rightarrow\quad
+                \qty{0.0522}{\second}\,\dot{v}_R(t) + v_R(t) = \qty{0.446}{\centi\metre\per\second\per\percent}\,\delta_R(t)
+            \end{equation}
+
+            The corresponding transfer function $G_R(s)$ is:
+
+            \begin{equation}
+                G_R(s) = \frac{K_{I,R}}{s\,(T_{1,R}\,s + 1)} = \frac{0.446}{s\,(0.0522\,s + 1)}
+            \end{equation}
+
+
+
+
+            \cleardoubleemptypage
+
+        \section{(f) Simulink simulation of the control loop}\label{sec:f-simulink-simulation}
+
+
+            \begin{displaycquote}{RTP_Versuche}
+                \footnotesize{\textit{(f) Create a Simulink simulation of the control loop designed in the preparation phase for the distance control using the identified system as the plant and a P controller. Use a gain $KP = \qty{-10}{\percent\per\cm}$, a target distance of \qty{25}{\cm} and an initial distance of \qty{80}{\cm} for testing. Use the integration method ode3 (Bogacki-Shampine) with a fixed step size of \qty{20}{\ms}. Do not forget the rate-limit-block (see 3.7) and use a value of $\frac{\qty{4}{\percent}}{20\,\text{ms}}$.
+                \vspace{2mm}\\
+                Plot the reference variable, the manipulated variable and the controlled variable.
+                \vspace{2mm}\\
+                What does this sampling time mean in terms of control engineering?\\
+                Which nonlinear element do you also need to add to the simulation to simulate real conditions?}}
+            \end{displaycquote}\label{task(f)}
+
+            \todo[inline]{create Simulink simulation of the control loop}
+            \missingfigure{image of the the simulink control loop}\label{fig:simulink_control_loop}
+
+            \missingfigure{plot of  reference variable, the manipulated variable and the controlled variable from the Simulink simulation}\label{fig:ref_varaiables_simulink}
+
+            \todo[inline]{write short documentation paragraph about the Simulink simulation and the resulting plot}
+
+            \todo[inline]{explain the effect of the sampeling time}
+
+            \todo[inline]{explain what non liniear elemet is needed for the simulation to real conditaions transfer}
+
+
+
+
+
+
+            \cleardoublepage
+
+
+
+
+
+
+
+    \appendix
+        % \makeatletter
+        
+    \chapter{Appendix Frontmatter}
+
+        \section{Declarations}\label{app:statutory}
+
+            \begin{enumerate}
+                \item Wir erkläre hiermit, dass wir dieses Dokument selbstständig verfasst, noch nicht anderweitig für Prüfungszwecke vorgelegt, keine anderen als die angegebenen Quellen und Hilfsmittel benutzt sowie wörtliche und sinngemäße Zitate als solche gekennzeichnet haben.
+            \end{enumerate}
+
+            \vskip22mm
+            Regensburg, den 2026-05-01, \\
+            "\hskip6cm Marius Off\hskip2cm Matrikelnummer:~3416002,\\
+            "\hskip6cm Janis Graf\hskip2cm Matrikelnummer:~3377251
+            \vskip1mm
+            \hrule
+            \vskip1mm
+            {\footnotesize Ort, Datum und Unterschrift}
+
+            \vspace{12mm}
+
+            \cleardoublepage
+
+        \listoffigures
+
+        %\listoftables
+
+            \cleardoublepage
+
+    \chapter{Appendix Code and Resources}
+
+
+
+            \section{Code used for the analysis of the Preperations}
+            
+            %\lstinputlisting[caption={Code used for the analysis of the Preperations}, label={lst:preperations}]{../02_Preperations/RTP-T2-analysis.ipynb}
+
+                \begin{tcolorbox}[
+                    colback=red!10,
+                    colframe=red!70!black,
+                    title=\textbf{Editorial note — Source code omitted},
+                    fonttitle=\bfseries,
+                    sharp corners=south,
+                ]
+                    The full source code for the analysis (a Jupyter notebook of this time approximately 1{,}500 lines and a simulink model) is \textbf{\emph{not}} included in this appendix. Including it as a verbatim listing caused major build instability again and was therefore deliberately omitted.
+
+                    The complete source can be obtained by either of the following means:
+                    \begin{itemize}
+                        \item By email request to \texttt{janis.graf@st.oth-regensburg.de}
+                        \item Via requesting access to the GitHub repository: \url{https://github.com/janisgra/RTP-T4-SoSe2026.git}
+                    \end{itemize}
+                \end{tcolorbox}
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %\chapter{Bibliography}
+        %%%Literaturverzeichnis
+        \printbibliography
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
