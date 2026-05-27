@@ -1,6 +1,0 @@
-\contentsline {todo}{create Simulink simulation of the control loop}{12}{section*.8}%
-\contentsline {todo}{Figure: image of the the simulink control loop}{12}{section*.8}%
-\contentsline {todo}{Figure: plot of reference variable, the manipulated variable and the controlled variable from the Simulink simulation}{12}{figure.caption.9}%
-\contentsline {todo}{write short documentation paragraph about the Simulink simulation and the resulting plot}{12}{section*.10}%
-\contentsline {todo}{explain the effect of the sampeling time}{12}{section*.11}%
-\contentsline {todo}{explain what non liniear elemet is needed for the simulation to real conditaions transfer}{12}{section*.12}%

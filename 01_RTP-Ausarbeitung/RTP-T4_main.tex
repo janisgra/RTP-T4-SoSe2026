@@ -8,8 +8,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
-    \todototoc
-    \listoftodos
+    % \todototoc
+    % \listoftodos
 
     \begin{titlepage}
 
@@ -402,29 +402,29 @@ Right motor (motor 1, QEI2)
                 Which nonlinear element do you also need to add to the simulation to simulate real conditions?}}
             \end{displaycquote}\label{task(f)}
 
-            \todo[inline]{create Simulink simulation of the control loop}
-            \missingfigure{image of the the simulink control loop}\label{fig:simulink_control_loop}
+            The distance-control loop of Section~\ref{sec:cV} is implemented in Simulink with the two identified IT$_1$ plants of Section~\ref{sec:e-differential-equations}; the model is shown in Figure~\ref{fig:simulink_control_loop}. The P controller uses $K_P = \qty{-10}{\percent\per\centi\metre}$ --- negative because the measurement convention $x = x_0 - x_\text{traveled}$ adopted in Section~\ref{sec:cV} makes the controlled variable decrease as the robot moves towards the target. The rate-limit block bounds $|\dot{\delta}| \le \qty{4}{\percent}/\qty{20}{\milli\second}$, and integration is fixed-step \texttt{ode3} (Bogacki--Shampine) with $T_s = \qty{20}{\milli\second}$, reference $w = \qty{25}{\centi\metre}$, and initial distance $x_0 = \qty{80}{\centi\metre}$.
 
-            \begin{figure}
+            \begin{figure}[H]
                 \centering
                 \includegraphics[width=\textwidth]{figure/simulink_system.pdf}
-                \caption{Simulink model of the distance control loop with the identified IT$_1$ parameters for both drives}
+                \caption{Simulink model of the distance control loop with the identified IT$_1$ plants for both drives.}
                 \label{fig:simulink_control_loop}
             \end{figure}
 
-            \missingfigure{plot of  reference variable, the manipulated variable and the controlled variable from the Simulink simulation}\label{fig:ref_varaiables_simulink}
+            Figure~\ref{fig:simulink_output} shows the simulated reference $w$ and controlled variable $x$ for both drives. Starting from $x_0 = \qty{80}{\centi\metre}$, $x$ decreases monotonically toward the target $w = \qty{25}{\centi\metre}$ without overshoot, and the two drive trains track each other to within plotting accuracy. The transient is shaped by the combination of the rate-limited manipulated variable and the dominant time constant of the IT$_1$ plant; the steady-state error converges to zero because the plant's integrator pole supplies the type-1 behaviour the pure P controller cannot provide on its own.
 
-            \todo[inline]{write short documentation paragraph about the Simulink simulation and the resulting plot}
-
-            \todo[inline]{explain the effect of the sampeling time}
-
-            \todo[inline]{explain what non liniear elemet is needed for the simulation to real conditaions transfer}
-
-            \begin{figure}
+            \begin{figure}[H]
                 \centering
-                \includegraphics[width=0.6\textwidth]{figure/simulinkoutput.pdf}
-                \caption{Simulink output showing the $x_e$ distance output for both motors and the $x_a$ controll system input.}
+                \includegraphics[width=0.7\textwidth]{figure/simulinkoutput.pdf}
+                \caption{Simulink output: reference $w$ and controlled variable $x$ for the left and right drive.}
+                \label{fig:simulink_output}
             \end{figure}
+
+            \paragraph{Sampling time.}
+            The fixed step $T_s = \qty{20}{\milli\second}$ corresponds to a sampling rate $f_s = \qty{50}{\hertz}$ and a Nyquist frequency of \qty{25}{\hertz}. Relative to the dominant plant time constant $T_1 \approx \qty{55}{\milli\second}$ this yields $T_1 / T_s \approx 3$, below the common digital-control guideline $T_1 / T_s \ge 10$. The loop remains stable for the values used here, but the coarse discretisation visibly limits how finely the rate-limited manipulated variable can track the desired control law and would degrade disturbance rejection at higher frequencies.
+
+            \paragraph{Required non-linearity.}
+            A \emph{saturation} block on the manipulated variable, clipping $\delta$ to the physically realisable PWM range $\pm \qty{100}{\percent}$, must be added to reflect the EV3 hardware. Without it the linear P controller demands $\delta = K_P\,(w - x_0) = \qty{550}{\percent}$ at the moment of the step --- a value the drive cannot produce, so the simulation would overestimate the achievable closing speed of the real system.
 
 
 
