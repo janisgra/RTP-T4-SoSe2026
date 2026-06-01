@@ -146,7 +146,7 @@
 
         \section{(cV) Block diagram of a distance control system (according to DIN IEC 60050-351).}\label{sec:cV}
 
-            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351~\cite{DIN_IEC_60050-351_2014}. The system consists of a reference variable $w$ (target distance), a control difference $e$, a controller output $m$, a manipulated variable $y$, a disturbance variable $z_y$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element processes the control difference to generate the controller output, which the final controlling element converts into the manipulated variable acting on the controlled system. The disturbance $z_y$ acts additively on the manipulated variable, and the measuring element derives the actual distance from the distance travelled, $x = x_0 - x_\mathrm{traveled}$, providing the feedback variable $r$.
+            Diagram \ref{fig:distance_control_block_diagram} shows a block diagram of a distance control system using a P controller according to DIN IEC 60050-351~\cite{DIN_IEC_60050-351_2014}. The system consists of a reference variable $w$ (target distance), a control difference $e$, a manipulated variable $y$, an initial distance $x_0$, a controlled variable $x$ (actual distance), and a feedback variable $r$. The controlling element processes the control difference to generate the manipulated variable $y$ acting on the controlled system. The controlled system produces the travelled distance $x_\mathrm{traveled}$, which is subtracted from the initial distance $x_0$ at a summing junction to yield the actual distance $x = x_0 - x_\mathrm{traveled}$; the measuring element then provides the feedback variable $r$ from this controlled variable.
 
             \begin{figure}[H]
                 \centering
@@ -171,12 +171,6 @@
                                 minimum size=0.6cm,
                                 inner sep=0pt
                             },
-                        dnode/.style={
-                                draw,
-                                circle,
-                                minimum size=0.45cm,
-                                inner sep=0pt
-                            },
                         input/.style={coordinate},
                         output/.style={coordinate},
                         pinstyle/.style={pin edge={to-,thin,black}}
@@ -185,35 +179,33 @@
                     % --- Forward path nodes -------------------------------------------
                     \node [input, name=input] {};
                     \node [sum, right of=input]                       (sum)   {};
-                    \node [block, right of=sum]                       (ctrl)  {Controlling element\\ ($K_\mathrm{P}$)\\ \emph{(Reglelglied)}};
-                    \node [block, right of=ctrl, node distance=3.6cm] (actor) {Controlling\\ element\\ (\emph{Stellglied})};
-                    % disturbance summing node on the y-line
-                    \node [dnode, right of=actor, node distance=2.0cm] (dsum) {};
-                    \node [block, right of=dsum, node distance=2.4cm]
-                    (plant) {Controlled system\\ (vehicle drive)\\ \emph{(Regelstrecke)}};
-                    \node [output, right of=plant, node distance=2.8cm] (output) {};
+                    \node [block, right of=sum]                       (ctrl)  {Controlling element\\ ($K_\mathrm{P}$)\\ \emph{(Reglerglied)}};
+                    \node [block, right of=ctrl, node distance=3.6cm]
+                    (plant) {Controlled system\\ ($K_\mathrm{I}$)\\ (vehicle drive)\\ \emph{(Regelstrecke)}};
+                    % initial-distance summing node on the x-line
+                    \node [sum, right of=plant, node distance=3.4cm] (xsum) {};
+                    \node [output, right of=xsum, node distance=2.4cm] (output) {};
 
-                    % --- Disturbance into the summing node ----------------------------
-                    \node [above of=dsum, node distance=1.8cm] (dist) {$z_y$ (\emph{Störgröße})};
-                    \draw [->] (dist) -- node[pos=0.75, right] {\small $+$} (dsum);
+                    % --- Initial distance into the summing node ----------------------------
+                    \node [above of=xsum, node distance=1.8cm] (init) {$x_0$ (\emph{Anfangsabstand})};
+                    \draw [->] (init) -- node[pos=0.75, right] {\small $+$} (xsum);
 
-                    % --- Manipulated-variable edge through disturbance node -----------
-                    \draw [->] (actor) -- node[name=y, pos=0.4] {$y$} node[pos=0.78, below] {\small $+$} (dsum);
-                    \draw [->] (dsum)  -- (plant);
+                    % --- Travelled distance into the summing node -----------
+                    \draw [->] (plant) -- node[pos=0.5] {$x_\mathrm{traveled}$} node[pos=0.88, below] {\small $-$} (xsum);
 
                     % --- Measuring element in the feedback path (centred) -------------
-                    \node [block, below of=dsum, node distance=2.8cm]
+                    \node [block, below of=plant, node distance=2.8cm]
                     (sensor)
-                    {Measuring element\\ (odometry: $x = x_0 - x_\mathrm{traveled}$)\\ \emph{(Messglied)}};
+                    {Measuring element\\ (odometry)\\ \emph{(Messglied)}};
 
                     % --- Forward connections ------------------------------------------
                     \draw [->] (input) -- node {$w$} (sum);
                     \draw [->] (sum)   -- node {$e$} (ctrl);
-                    \draw [->] (ctrl)  -- node[pos=0.5] {$m$} (actor);
-                    \draw [->] (plant) -- node [name=x] {$x$} (output);
+                    \draw [->] (ctrl)  -- node[pos=0.5] {$y$} (plant);
+                    \draw [->] (xsum)  -- node [name=x] {$x$} (output);
 
                     % --- Feedback connections -----------------------------------------
-                    \coordinate (tap) at ($(plant)!0.55!(output)$);
+                    \coordinate (tap) at ($(xsum)!0.55!(output)$);
                     \node[circle, fill, inner sep=1.2pt] at (tap) {};
                     \draw [->] (tap) |- (sensor.east);
                     \draw [->] (sensor.west) -| node[pos=0.99] {$-$}
@@ -228,9 +220,9 @@
                     {%
                         $w$: reference variable (\emph{Führungsgröße}, target distance)\\
                         $e$: control difference (\emph{Regeldifferenz}), $e = w - r$\\
-                        $m$: controller output (\emph{Reglerausgangsgröße})\\
                         $y$: manipulated variable (\emph{Stellgröße})\\
-                        $z_y$: disturbance variable (\emph{Störgröße})\\
+                        $x_0$: initial distance (\emph{Anfangsabstand})\\
+                        $x_\mathrm{traveled}$: travelled distance (\emph{zurückgelegte Strecke})\\
                         $x$: controlled variable (\emph{Regelgröße}, actual distance)\\
                         $r$: feedback variable (\emph{Rückführgröße})%
                     };
@@ -330,9 +322,6 @@ Right motor (motor 1, QEI2)
                 G(s) = \frac{K_I}{s(T_1 s + 1)} 
             \end{equation}
 
-            \begin{equation}
-                h(t) = K_I \left( t - T_1 (1 - e^{-\frac{t}{T_1}}) \right)
-            \end{equation}
 
             \subsection{Left Motor}\label{subsec:left-motor}
 
@@ -415,13 +404,13 @@ Right motor (motor 1, QEI2)
 
             \begin{figure}[H]
                 \centering
-                \includegraphics[width=0.6\textwidth]{figure/simulinkoutput.pdf}
+                \includegraphics[width=0.6\textwidth]{figure/RTP-system-output.eps}
                 \caption{Simulink output: reference $w$ and controlled variable $x$ for the left and right drive.}
                 \label{fig:simulink_output}
             \end{figure}
 
             \paragraph{Sampling time.}
-            The fixed step $T_s = \qty{20}{\milli\second}$ corresponds to a sampling rate $f_s = \qty{50}{\hertz}$ and a Nyquist frequency of \qty{25}{\hertz}. Relative to the dominant plant time constant $T_1 \approx \qty{55}{\milli\second}$ this yields $T_1 / T_s \approx 3$, below the common digital-control guideline $T_1 / T_s \ge 10$. The loop remains stable for the values used here, but the coarse discretisation visibly limits how finely the rate-limited manipulated variable can track the desired control law and would degrade disturbance rejection at higher frequencies.
+            The fixed step $T_s = \qty{20}{\milli\second}$ corresponds to a sampling rate $f_s = \qty{50}{\hertz}$ and a Nyquist frequency of \qty{25}{\hertz}. Relative to the dominant plant time constant $T_1 \approx \qty{55}{\milli\second}$ this yields $T_1 / T_s \approx 3$, below the common digital-control guideline $T_1 / T_s \ge 10$. The loop remains stable for the values used here, but the coarse discretisation visibly limits how finely the rate-limited manipulated variable can track the desired control law and would degrade disturbance rejection at higher frequencies. In control-engineering terms, the interval between two sampling instants acts practically as a \emph{dead time} (\emph{Totzeit}): the zero-order hold keeps the manipulated variable constant between updates and the controller responds only at the next step, so a change is answered up to one sampling period $T_s$ late (about $T_s/2$ on average). This effective dead time introduces additional phase lag and therefore reduces the available phase margin.
 
             \paragraph{Required non-linearity.}
             A \emph{saturation} block on the manipulated variable, clipping $\delta$ to the physically realisable PWM range $\pm \qty{100}{\percent}$, must be added to reflect the EV3 hardware. Without it the linear P controller demands $\delta = K_P\,(w - x_0) = \qty{550}{\percent}$ at the moment of the step --- a value the drive cannot produce, so the simulation would overestimate the achievable closing speed of the real system.
